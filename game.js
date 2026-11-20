@@ -159,23 +159,16 @@ function create() {
     );
   }
 
-  kay = this.add.container(500, 650);
+  createKayTextures(this);
 
-  const shadow = this.add.ellipse(0, 15, 25, 12, 0x243324, 0.4);
-  const body = this.add.rectangle(0, 0, 25, 32, 0x3977c5)
-    .setStrokeStyle(3, 0x1c3657);
-  const head = this.add.circle(0, -22, 12, 0xf0c49a)
-    .setStrokeStyle(2, 0x875b42);
-  const hair = this.add.arc(0, -25, 12, 180, 360, false, 0x493022)
-    .setStrokeStyle(5, 0x493022);
+kay = this.physics.add.sprite(500, 650, "kay", 0);
 
-  kay.add([shadow, body, head, hair]);
-  kay.setDepth(650);
+kay.setDepth(650);
+kay.body.setSize(18, 15);
+kay.body.setOffset(7, 29);
+kay.body.setCollideWorldBounds(true);
 
-  this.physics.add.existing(kay);
-  kay.body.setSize(20, 20);
-  kay.body.setOffset(-10, -5);
-  kay.body.setCollideWorldBounds(true);
+kay.setScale(1.5);
 
   this.physics.add.collider(kay, obstacles);
 
@@ -204,7 +197,6 @@ function create() {
   createMobileControls.call(this);
   updateHUD();
 }
-
 function collectResource(player, item) {
   if (!item.active) return;
 
@@ -318,6 +310,21 @@ function update(time, delta) {
   if (cursors.up.isDown || keys.W.isDown || moving.up) dy--;
   if (cursors.down.isDown || keys.S.isDown || moving.down) dy++;
 
+  let facing = kay.getData("facing") || "down";
+
+  if (dx !== 0 || dy !== 0) {
+    if (Math.abs(dx) > Math.abs(dy)) {
+      facing = dx < 0 ? "left" : "right";
+    } else {
+      facing = dy < 0 ? "up" : "down";
+    }
+
+    kay.setData("facing", facing);
+    kay.play("kay_walk_" + facing, true);
+  } else {
+    kay.play("kay_idle_" + facing, true);
+  }
+
   const sprint = (
     keys.SHIFT.isDown && energy > 0
   );
@@ -348,4 +355,143 @@ function update(time, delta) {
 
   updateHUD();
       }
+
+function createKayTextures(scene) {
+  const texture = scene.textures.createCanvas("kay", 96, 192);
+  const ctx = texture.getContext();
+
+  const colors = {
+    hair: "#39251f",
+    hairLight: "#51352a",
+    skin: "#efbd91",
+    skinShadow: "#ce906e",
+    shirt: "#2864a8",
+    shirtLight: "#438bd0",
+    pants: "#29364d",
+    shoes: "#e5e5df",
+    outline: "#211c20"
+  };
+
+  function pixel(x, y, w, h, color) {
+    ctx.fillStyle = color;
+    ctx.fillRect(x, y, w, h);
+  }
+
+  const directions = ["down", "left", "right", "up"];
+
+  directions.forEach((direction, row) => {
+    for (let frame = 0; frame < 3; frame++) {
+      const ox = frame * 32;
+      const oy = row * 48;
+      const step = frame === 1 ? 2 : frame === 2 ? -2 : 0;
+
+      ctx.save();
+
+      // Fundo transparente
+      ctx.clearRect(ox, oy, 32, 48);
+
+      // Sombra
+      pixel(8 + ox, 43 + oy, 16, 3, "#29432d");
+
+      if (direction === "down") {
+        // Cabelo
+        pixel(9 + ox, 3 + oy, 14, 3, colors.outline);
+        pixel(6 + ox, 6 + oy, 20, 10, colors.hair);
+        pixel(8 + ox, 4 + oy, 15, 7, colors.hairLight);
+
+        // Rosto
+        pixel(9 + ox, 10 + oy, 14, 13, colors.skin);
+        pixel(8 + ox, 14 + oy, 2, 6, colors.skinShadow);
+
+        // Olhos
+        pixel(11 + ox, 16 + oy, 3, 3, colors.outline);
+        pixel(19 + ox, 16 + oy, 3, 3, colors.outline);
+
+        // Cabelo frontal
+        pixel(8 + ox, 8 + oy, 5, 5, colors.hair);
+        pixel(15 + ox, 6 + oy, 6, 5, colors.hair);
+        pixel(21 + ox, 9 + oy, 4, 5, colors.hair);
+      }
+
+      if (direction === "up") {
+        pixel(8 + ox, 5 + oy, 16, 17, colors.hair);
+        pixel(10 + ox, 4 + oy, 12, 8, colors.hairLight);
+      }
+
+      if (direction === "left" || direction === "right") {
+        pixel(8 + ox, 5 + oy, 17, 15, colors.hair);
+        pixel(10 + ox, 4 + oy, 12, 8, colors.hairLight);
+        pixel(10 + ox, 14 + oy, 13, 9, colors.skin);
+
+        const eyeX = direction === "left" ? 10 : 19;
+        pixel(eyeX + ox, 16 + oy, 3, 3, colors.outline);
+      }
+
+      // Pescoço
+      pixel(13 + ox, 22 + oy, 7, 4, colors.skin);
+
+      // Braços
+      pixel(5 + ox, 27 + oy, 5, 10, colors.shirt);
+      pixel(22 + ox, 27 + oy, 5, 10, colors.shirt);
+
+      // Corpo
+      pixel(9 + ox, 24 + oy, 14, 13, colors.shirt);
+      pixel(11 + ox, 25 + oy, 5, 10, colors.shirtLight);
+
+      // Calças
+      pixel(10 + ox, 37 + oy, 5, 5 + Math.max(0, step), colors.pants);
+      pixel(17 + ox, 37 + oy, 5, 5 + Math.max(0, -step), colors.pants);
+
+      // Sapatos
+      pixel(8 + ox, 42 + oy, 8, 4, colors.shoes);
+      pixel(17 + ox, 42 + oy, 8, 4, colors.shoes);
+
+      ctx.restore();
+    }
+  });
+
+  texture.refresh();
+
+  for (let row = 0; row < 4; row++) {
+    for (let col = 0; col < 3; col++) {
+      const frame = row * 3 + col;
+
+      texture.add(
+        frame,
+        0,
+        col * 32,
+        row * 48,
+        32,
+        48
+      );
+    }
+  }
+  
+  const animations = [
+    ["down", 0],
+    ["left", 1],
+    ["right", 2],
+    ["up", 3]
+  ];
+
+  animations.forEach(([name, row]) => {
+    scene.anims.create({
+      key: "kay_walk_" + name,
+      frames: scene.anims.generateFrameNumbers("kay", {
+        start: row * 3,
+        end: row * 3 + 2
+      }),
+      frameRate: 7,
+      repeat: -1
+    });
+  });
+
+  animations.forEach(([name, row]) => {
+    scene.anims.create({
+      key: "kay_idle_" + name,
+      frames: [{ key: "kay", frame: row * 3 }],
+      frameRate: 1
+    });
+  });
+}
 
