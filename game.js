@@ -450,7 +450,7 @@ function createKayTextures(scene) {
     }
   });
 
-  texture.refresh();
+  
 
   for (let row = 0; row < 4; row++) {
     for (let col = 0; col < 3; col++) {
@@ -466,7 +466,7 @@ function createKayTextures(scene) {
       );
     }
   }
-  
+texture.refresh();  
   const animations = [
     ["down", 0],
     ["left", 1],
